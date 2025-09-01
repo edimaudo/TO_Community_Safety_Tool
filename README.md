@@ -1,9 +1,14 @@
-# 🎈 Blank app template
+# TO Neighborhood Safety Tool
 
-A simple Streamlit app template for you to modify!
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+   Focusing on Community Safety, this project analyzes crime and socio-economic data to understand incidents for Toronto, Ontario neighbourhoods.  
+    It also enables the user to predict and forecast incidents for particular neighourhood.  
+    Based on the predictions and forecast it would leverage Gemini AI to generate safety tips. 
+    It is built using [streamlit](https://streamlit.io/cloud), [Gemini AI](https://ai.google.dev/gemini-api/docs) and TIDB Serverless (https://www.pingcap.com/).  
+    The data is from [Toronto Police](https://data.torontopolice.on.ca/datasets/TorontoPS::major-crime-indicators-open-data/about) and [City of Toronto](https://data.urbandatacentre.ca/organization/city-of-toronto-open-data?q=wellbeing&sort=score+desc%2C+metadata_modified+desc&page=1).
+   .
 
+    
 ### How to run it on your own machine
 
 1. Install the requirements
@@ -15,5 +20,5 @@ A simple Streamlit app template for you to modify!
 2. Run the app
 
    ```
-   $ streamlit run streamlit_app.py
+   $ streamlit run app.py
    ```

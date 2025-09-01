@@ -1,6 +1,10 @@
-import streamlit as st
+from utils import *
 
-st.title("🎈 My new app")
-st.write(
-    "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
-)
+pg = st.navigation([
+    st.Page("About.py"),
+    st.Page("Overview.py"),
+    st.Page("Neighbourhood_Incident_Exploration.py"),
+    st.Page("Neighbourhood_Incident_Predictor.py"),
+    st.Page("Neighourhood_Incident_Forecast.py"),
+])
+pg.run()
