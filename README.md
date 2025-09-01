@@ -20,5 +20,5 @@
 2. Run the app
 
    ```
-   $ streamlit run app.py
+   $ streamlit run streamlit_app.py
    ```
