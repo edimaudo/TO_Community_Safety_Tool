@@ -9,7 +9,7 @@ st.write("""
          """)
 
 
-tab1, tab2= st.tabs(["Neighourhood Socio-Ecomonic Metrics", "Neighourhood Incident Trends"])
+tab1, tab2= st.tabs(["Neighourhood Socio-Economic Metrics", "Neighourhood Incident Trends"])
 with tab1:
     with st.sidebar:
         neighourhood_options = st.selectbox('Neighbourhood',NEIGHBORHOOD)
@@ -52,7 +52,7 @@ with tab2:
         col1, col2, col3 = st.columns(3)
         neighorhood_df = df_filtered[(df_filtered['OCC_YEAR'].isin(year_options)) & (df_filtered['OCC_MONTH'].isin(month_options)) & (df_filtered['OCC_DOW'].isin(dow_options)) & (df_filtered['MCI_CATEGORY'].isin(mci_options)) & (df_filtered['PREMISES_TYPE'].isin(premises_options)) & (df_filtered['Neighborhood'] == neighourhood_options)]
         with col1:
-            st.subheader("Total Crime by Year")
+            st.subheader("Total Incident by Year")
             crimes_data = neighorhood_df[['MCI_CATEGORY','OCC_YEAR']]
             crimes_data = crimes_data.groupby(['OCC_YEAR']).agg(Total_reviews = ('MCI_CATEGORY', 'count')).reset_index()
             crimes_data.columns = ['Year','Total']
@@ -60,7 +60,7 @@ with tab2:
             fig = px.bar(crimes_data, x="Year", y="Total")
             st.plotly_chart(fig)
         with col2:
-            st.subheader("Crime Category by Year")
+            st.subheader("Incident Category by Year")
             crimes_data = neighorhood_df[['MCI_CATEGORY','OCC_YEAR']]
             crimes_data = crimes_data.groupby(['MCI_CATEGORY','OCC_YEAR']).agg(Total_reviews = ('MCI_CATEGORY', 'count')).reset_index()
             crimes_data.columns = ['MCI CATEGORY', 'Year','Total']
@@ -82,7 +82,7 @@ with tab2:
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Crime Category by Month")
+        st.subheader("Incident Category by Month")
         crimes_data = neighorhood_df[['MCI_CATEGORY','OCC_MONTH']]
         crimes_data = crimes_data.groupby(['MCI_CATEGORY','OCC_MONTH']).agg(Total_reviews = ('MCI_CATEGORY', 'count')).reset_index()
         crimes_data.columns = ['MCI CATEGORY', 'Month','Total']
@@ -92,7 +92,7 @@ with tab2:
         fig = px.line(crimes_data, x="Month", y="Total",color='MCI CATEGORY')
         st.plotly_chart(fig)
 
-        st.subheader("Crime Category by Day of Week")
+        st.subheader("Incident Category by Day of Week")
         crimes_data = neighorhood_df[['MCI_CATEGORY','OCC_DOW']]
         dow_dict = {'Monday':1,'Tuesday':2,'Wednesday':3, 'Thursday':4, 'Friday':5, 'Saturday':6, 'Sunday':7}
         crimes_data = crimes_data[crimes_data['OCC_DOW'].isin(dow_dict)]
@@ -102,7 +102,7 @@ with tab2:
         fig = px.line(crimes_data, x="Day of Week", y="Total",color='MCI CATEGORY')
         st.plotly_chart(fig)
 
-        st.subheader("Crime by Hour & Day of Week")
+        st.subheader("Incident by Hour & Day of Week")
 
         crimes_data = neighorhood_df[['OCC_HOUR', 'OCC_DOW']]
         crimes_data = (
@@ -135,7 +135,7 @@ with tab2:
 
 
     with col2:
-        st.subheader("Crime Category by Day of the Month")
+        st.subheader("Incident Category by Day of the Month")
         crimes_data = neighorhood_df[['MCI_CATEGORY','OCC_DAY']]
         crimes_data = crimes_data.groupby(['MCI_CATEGORY','OCC_DAY']).agg(Total_reviews = ('MCI_CATEGORY', 'count')).reset_index()
         crimes_data.columns = ['MCI CATEGORY', 'Day','Total']
@@ -143,7 +143,7 @@ with tab2:
         fig = px.line(crimes_data, x="Day", y="Total",color='MCI CATEGORY')
         st.plotly_chart(fig)
 
-        st.subheader("Crime Category by Hour")
+        st.subheader("Incident Category by Hour")
         crimes_data = neighorhood_df[['MCI_CATEGORY','OCC_HOUR']]
         crimes_data = crimes_data.groupby(['MCI_CATEGORY','OCC_HOUR']).agg(Total_reviews = ('MCI_CATEGORY', 'count')).reset_index()
         crimes_data.columns = ['MCI CATEGORY', 'Hour','Total']
@@ -151,7 +151,7 @@ with tab2:
         fig = px.line(crimes_data, x="Hour", y="Total",color='MCI CATEGORY')
         st.plotly_chart(fig)
 
-        st.subheader("Crime Category by Premise Type")
+        st.subheader("Incident Category by Premise Type")
         crimes_data = neighorhood_df[['MCI_CATEGORY','PREMISES_TYPE']]
         crimes_data = crimes_data.groupby(['MCI_CATEGORY','PREMISES_TYPE']).agg(Total_reviews = ('MCI_CATEGORY', 'count')).reset_index()
         crimes_data.columns = ['MCI CATEGORY', 'PREMISES TYPE','Total']

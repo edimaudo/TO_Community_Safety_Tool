@@ -9,7 +9,7 @@ st.write("""
          """)
 
 
-tab1, tab2 = st.tabs(["Socio-Economic Metrics", "Incident Risk Trends"])
+tab1, tab2 = st.tabs(["Socio-Economic Metrics", "Incident Trends"])
 
 with tab1:
     st.subheader("Culture")
