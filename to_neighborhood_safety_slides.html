@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TO Neighborhood Safety Tool - Slide Deck</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Helvetica, Arial, sans-serif;
+      background-color: #F5F5EF;
+      color: #1F2839;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .slide {
+      display: none;
+      width: 80%;
+      max-width: 1000px;
+      text-align: center;
+    }
+    .slide.active {
+      display: block;
+    }
+    h1 {
+      font-size: 3em;
+      color: #B69D74;
+    }
+    h2 {
+      font-size: 2.5em;
+      color: #B69D74;
+      margin-bottom: 40px;
+    }
+    h3, p, li {
+      font-size: 1.5em;
+      line-height: 1.6;
+    }
+    ul {
+      list-style: none;      /* remove default bullets */
+      padding-left: 1.5em;   /* consistent indentation */
+      margin: 0;
+      text-align: left;       /* bullets aligned vertically */
+    }
+    li {
+      margin-bottom: 0.5em;  /* vertical spacing between bullets */
+    }
+    li::before {
+      content: "• ";
+      color: #B69D74;
+      margin-right: 0.5em;   /* space between bullet and text */
+    }
+    .two-column {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 40px;
+    }
+    .column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .column h3 {
+      margin-bottom: 20px;
+    }
+    .column p, .column ul {
+      margin-top: 0;
+    }
+    .nav-buttons {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      background-color: #B69D74;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      color: #F5F5EF;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
+      opacity: 0.9;
+    }
+    .thank-you-slide {
+      color: black; /* main text black */
+    }
+    .thank-you-slide .highlight {
+      color: #B69D74; /* "Thank You" in tertiary color */
+      font-weight: bold;
+      font-size: 2em;
+    }
+  </style>
+</head>
+<body>
+  <!-- Title Slide -->
+  <div class="slide active">
+    <h1>TO Neighbourhood Safety Tool</h1>
+    <h3>Driving Community Safety in Toronto</h3>
+  </div>
+
+  <!-- Overview Slide -->
+  <div class="slide">
+    <h2>Overview</h2>
+    <div class="two-column">
+      <!-- Why column -->
+      <div class="column">
+        <h3>Why</h3>
+        <p style="text-align: left;">
+          The TO Neighborhood Safety Tool was created to help residents understand socio-economic information and crime incidents across Toronto neighborhoods. It provides insights into trends and provides the ability to predict the type of incident, forecast future levels of incidents as well as provide safety tieps to support safer communities.
+        </p>
+      </div>
+      <!-- App Breakdown column -->
+      <div class="column">
+        <h3>App Breakdown</h3>
+        <ul>
+          <li>About</li>
+          <li>Overview</li>
+          <li>Neighbourhood Incident Overview</li>
+          <li>Neighbourhood Incident Prediction</li>
+          <li>Neighbourhood Incident Forecast</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools Used Slide -->
+  <div class="slide">
+    <h2>Tools Used</h2>
+    <div style="text-align: center;">
+      <ul style="display: inline-block; text-align: left;">
+        <li>Python for data analysis</li>
+        <li>Streamlit for interactive dashboard</li>
+        <li>Plotly for data visualization</li>
+        <li>Toronto Police Service & City of Toronto Open Data</li>
+        <li>Gemini AI for Safety Tips generation</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Demo Slide -->
+  <div class="slide">
+    <h2>Demo</h2>
+  </div>
+
+  <!-- Next Steps Slide -->
+  <div class="slide">
+    <h2>Next Steps</h2>
+    <div style="text-align: center;">
+      <ul style="display: inline-block; text-align: left;">
+        <li>Improve prediction and forecast models</li>
+        <li>Add automated weekly data refresh</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Thank You Slide -->
+  <div class="slide thank-you-slide">
+    <p>Thank you for exploring the tool.<br>
+    Together we can build a Safer Toronto.<br>
+    <span class="highlight">Thank You.</span></p>
+  </div>
+
+  <!-- Navigation Buttons -->
+  <div class="nav-buttons">
+    <button id="prevBtn" onclick="prevSlide()">Previous</button>
+    <button id="nextBtn" onclick="nextSlide()">Next</button>
+  </div>
+
+  <!-- Slide Script -->
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    let currentSlide = 0;
+
+    function showSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.classList.remove('active');
+        if (i === index) slide.classList.add('active');
+      });
+      document.getElementById('prevBtn').disabled = index === 0;
+      document.getElementById('nextBtn').disabled = index === slides.length - 1;
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        showSlide(currentSlide);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        showSlide(currentSlide);
+      }
+    }
+
+    showSlide(currentSlide);
+  </script>
+</body>
+</html>
