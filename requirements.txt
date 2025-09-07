@@ -93,6 +93,7 @@ pydantic==2.11.7
 pydantic_core==2.33.2
 pydeck==0.9.1
 Pygments==2.19.2
+PyMySQL==1.1.2
 pyod==2.0.5
 pyogrio==0.11.1
 pyparsing==3.2.3
