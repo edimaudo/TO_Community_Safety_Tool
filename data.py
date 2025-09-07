@@ -12,6 +12,8 @@ def load_data(DATA_URL,DATA_TYPE):
         data = pd.read_excel(DATA_URL)
     elif DATA_TYPE == 'geojson':
         data = pd.read_json(DATA_URL)
+    elif DATA_TYPE == 'csv':
+        data = pd.read_csv(DATA_URL)
     return data
 
 
