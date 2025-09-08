@@ -87,101 +87,62 @@ def connect_tidb():
         return None
 
 
-def fetch_relevant_data(query_text, top_k=50):
-    """Perform vector search in TiDB using precomputed embeddings"""
-    conn = connect_tidb()
-    if conn is None:
-        return pd.DataFrame()
+# ----------------- Embedding helper -----------------
+def get_embedding(text: str):
+    """Get embedding vector from Gemini."""
+    if not text.strip():
+        return [0.0] * 768
+    resp = client.models.embed_content(model=EMBED_MODEL, contents=text)
+    return list(resp.embeddings[0].values)
 
+# ----------------- Vector search -----------------
+def vector_search(query: str, top_k: int = 5):
+    """Search TiDB using vector similarity on embeddings."""
     try:
-        # 1. Embed the user query
-        resp = client.models.embed_content(
-            model=EMBED_MODEL,
-            contents=[query_text]
-        )
-        query_vec = resp.embeddings[0].values
+        query_emb = get_embedding(query)
+        emb_json = json.dumps(query_emb)
 
-        # 2. Run vector similarity search in TiDB
-        sql = """
-        SELECT id, occurrence_date, offence, mci_category, neighbourhood, location_type,
-               ST_Distance_Sphere(embedding, CAST(%s AS VECTOR)) AS distance
+        conn = connect_tidb()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+        sql = f"""
+        SELECT id, occ_date, mci_category, offence, neighborhood,
+               VEC_COSINE_DISTANCE(embedding, CAST(%s AS VECTOR)) AS score
         FROM crime_data
-        ORDER BY distance ASC
-        LIMIT %s
+        ORDER BY score
+        LIMIT {top_k};
         """
-        df = pd.read_sql(sql, conn, params=[json.dumps(query_vec), top_k])
-        return df
+        cursor.execute(sql, (emb_json,))
+        rows = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+        return pd.DataFrame(rows)
 
     except Exception as e:
-        st.error(f"Vector search failed: {e}")
+        st.error(f"Vector search error: {e}")
         return pd.DataFrame()
-    finally:
-        conn.close()
 
-
-def ask_gemini(question, context_df):
-    """Ask Gemini using retrieved context"""
+# ----------------- Ask Gemini -----------------
+def ask_gemini(question: str, context_df: pd.DataFrame):
+    """Pass query + context to Gemini and return text answer only."""
     try:
-        schema = """
-        Respond ONLY in JSON matching this schema:
-        {
-          "answer": "short explanation",
-          "chart": {
-            "type": "bar|line|pie|null",
-            "x": "column name or null",
-            "y": "column name or null",
-            "color": "column name or null"
-          }
-        }
-        """
-
-        sample = context_df.to_dict(orient="records")
+        context_text = context_df.to_string(index=False) if not context_df.empty else "No context found."
 
         prompt = f"""
-        You are analyzing a crime dataset. 
-        User question: {question}
+        You are a crime data analytics specialist for Toronto Police Services.
+        Use the following incident records to answer the question.
 
-        Relevant rows from database:
-        {json.dumps(sample, indent=2)}
+        Question: {question}
 
-        Now provide an answer and suggest a visualization.
-        {schema}
+        Incident Records:
+        {context_text}
+
+        Provide a clear, concise text answer.
         """
 
-        resp = client.models.generate_content(
-            model=GEN_MODEL,
-            contents=prompt
-        )
-
-        try:
-            parsed = json.loads(resp.text)
-            return parsed
-        except Exception:
-            return {"answer": resp.text, "chart": None}
+        resp = client.models.generate_content(model=GEN_MODEL, contents=prompt)
+        return resp.text.strip()
 
     except Exception as e:
-        return {"answer": f"Gemini API error: {e}", "chart": None}
-
-
-def visualize_data(df, chart_spec):
-    if not chart_spec or not isinstance(chart_spec, dict):
-        return None
-
-    chart_type = chart_spec.get("type")
-    x_col = chart_spec.get("x")
-    y_col = chart_spec.get("y")
-    color_col = chart_spec.get("color")
-
-    try:
-        if chart_type == "bar":
-            fig = px.bar(df, x=x_col, y=y_col, color=color_col, title="Crime Data")
-        elif chart_type == "line":
-            fig = px.line(df, x=x_col, y=y_col, color=color_col, title="Crime Data Trend")
-        elif chart_type == "pie":
-            fig = px.pie(df, names=x_col, values=y_col, title="Crime Data Distribution")
-        else:
-            return None
-        return fig
-    except Exception as e:
-        st.error(f"Visualization error: {e}")
-        return None
+        return f"Gemini API error: {e}"

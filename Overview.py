@@ -160,25 +160,17 @@ with tab2:
 
 
 with tab3:
-    st.write("Incident Data Question and Answer using natural text")
-    user_question = st.text_input("Ask a question about the incident dataset")
-    if st.button("Get Answer"):
-        if not user_question.strip():
-            st.warning("Please enter a question.")
-        else:
-            st.info("Running vector search in TiDB...")
-            df = fetch_relevant_data(user_question, top_k=50)
-            if df.empty:
-                st.error("No relevant data found.")
-            else:
-                st.success("Retrieved relevant rows. Sending to Gemini...")
-                result = ask_gemini(user_question, df)
-                st.subheader("Answer")
-                st.write(result.get("answer", "No answer returned."))
+    question = st.text_input("Ask a question about crime incidents")
+    if st.button("Search") and question:
+        with st.spinner("Running search..."):
+            context_df = vector_search(question, top_k=500)
 
-                chart_spec = result.get("chart")
-                if chart_spec:
-                    fig = visualize_data(df, chart_spec)
-                    if fig:
-                        st.subheader("Visualization")
-                        st.plotly_chart(fig, use_container_width=True)
+        if not context_df.empty:
+            with st.spinner("Asking Gemini..."):
+                answer = ask_gemini(question, context_df)
+
+            st.subheader("Answer")
+            st.write(answer)
+        else:
+            st.warning("No relevant records found.")
+
