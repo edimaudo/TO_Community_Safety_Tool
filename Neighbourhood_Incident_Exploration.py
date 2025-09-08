@@ -9,7 +9,7 @@ st.write("""
          """)
 
 
-tab1, tab2= st.tabs(["Neighourhood Socio-Economic Metrics", "Neighourhood Incident Trends"])
+tab1, tab2, tab3= st.tabs(["Neighourhood Socio-Economic Metrics", "Neighourhood Incident Trends", "Neighbourhood Incident Data Q&A"])
 with tab1:
     with st.sidebar:
         neighourhood_options = st.selectbox('Neighbourhood',NEIGHBORHOOD)
@@ -168,5 +168,28 @@ with tab2:
         fig.update_layout(width=500, height=500)
         st.plotly_chart(fig)
  
+with tab3:
+    st.write("Neighborhood Incident Data Question and Answer using natural text")
+    user_question = st.text_input("Ask a question about the neighhorhood incident dataset") # see if filter can be used as well
+    if st.button("Get Answer"):
+        if not user_question.strip():
+            st.warning("Please enter a question.")
+        else:
+            st.info("Running vector search in TiDB...")
+            df = fetch_relevant_data(user_question, top_k=50)
+            if df.empty:
+                st.error("No relevant data found.")
+            else:
+                st.success("Retrieved relevant rows. Sending to Gemini...")
+                result = ask_gemini(user_question, df)
+                st.subheader("Answer")
+                st.write(result.get("answer", "No answer returned."))
+
+                chart_spec = result.get("chart")
+                if chart_spec:
+                    fig = visualize_data(df, chart_spec)
+                    if fig:
+                        st.subheader("Visualization")
+                        st.plotly_chart(fig, use_container_width=True)
 
 

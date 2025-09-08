@@ -9,7 +9,7 @@ st.write("""
          """)
 
 
-tab1, tab2 = st.tabs(["Socio-Economic Metrics", "Incident Trends"])
+tab1, tab2, tab3 = st.tabs(["Socio-Economic Metrics", "Incident Trends", "Incident Data Q&A"])
 
 with tab1:
     st.subheader("Culture")
@@ -159,3 +159,26 @@ with tab2:
 
 
 
+with tab3:
+    st.write("Incident Data Question and Answer using natural text")
+    user_question = st.text_input("Ask a question about the incident dataset")
+    if st.button("Get Answer"):
+        if not user_question.strip():
+            st.warning("Please enter a question.")
+        else:
+            st.info("Running vector search in TiDB...")
+            df = fetch_relevant_data(user_question, top_k=50)
+            if df.empty:
+                st.error("No relevant data found.")
+            else:
+                st.success("Retrieved relevant rows. Sending to Gemini...")
+                result = ask_gemini(user_question, df)
+                st.subheader("Answer")
+                st.write(result.get("answer", "No answer returned."))
+
+                chart_spec = result.get("chart")
+                if chart_spec:
+                    fig = visualize_data(df, chart_spec)
+                    if fig:
+                        st.subheader("Visualization")
+                        st.plotly_chart(fig, use_container_width=True)
