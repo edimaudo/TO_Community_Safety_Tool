@@ -96,8 +96,22 @@ def get_embedding(text: str):
     return list(resp.embeddings[0].values)
 
 # ----------------- Vector search -----------------
-def vector_search(query: str, top_k: int = 5):
-    """Search TiDB using vector similarity on embeddings."""
+def vector_search(
+    query: str,
+    top_k: int = 20,
+    neighbourhood: list = None,
+    years: list = None,
+    months: list = None,
+    dows: list = None,
+    categories: list = None,
+    premises: list = None,
+):
+    """
+    Hybrid vector + structured search.
+    - query: free text for embedding similarity
+    - top_k: number of rows to return
+    - optional filters: if lists provided, filter SQL results
+    """
     try:
         query_emb = get_embedding(query)
         emb_json = json.dumps(query_emb)
@@ -105,43 +119,95 @@ def vector_search(query: str, top_k: int = 5):
         conn = connect_tidb()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
+        conditions = ["embedding IS NOT NULL"]
+        params = [emb_json]
+
+        if years and len(years) > 0:
+            conditions.append("occ_year IN %s")
+            params.append(tuple(years))
+
+        if months and len(months) > 0:
+            conditions.append("occ_month IN %s")
+            params.append(tuple(months))
+
+        if dows and len(dows) > 0:
+            conditions.append("occ_dow IN %s")
+            params.append(tuple(dows))
+
+        if categories and len(categories) > 0:
+            conditions.append("mci_category IN %s")
+            params.append(tuple(categories))
+
+        if premises and len(premises) > 0:
+            conditions.append("premises_type IN %s")
+            params.append(tuple(premises))
+
+        if neighbourhood and len(neighbourhood) > 0:
+            conditions.append("neighborhood IN %s")
+            params.append(tuple(neighbourhood))
+
+        where_clause = " AND ".join(conditions)
+
         sql = f"""
-        SELECT id, occ_date, mci_category, offence, neighborhood,
+        SELECT id, occ_date, occ_year, occ_month, occ_day, occ_dow, occ_hour,
+               mci_category, offence, neighborhood, premises_type,
                VEC_COSINE_DISTANCE(embedding, CAST(%s AS VECTOR)) AS score
         FROM crime_data
-        ORDER BY score
+        WHERE {where_clause}
+        ORDER BY score ASC
         LIMIT {top_k};
         """
-        cursor.execute(sql, (emb_json,))
-        rows = cursor.fetchall()
 
+        cursor.execute(sql, tuple(params))
+        rows = cursor.fetchall()
         cursor.close()
         conn.close()
+
         return pd.DataFrame(rows)
 
     except Exception as e:
         st.error(f"Vector search error: {e}")
         return pd.DataFrame()
 
+
 # ----------------- Ask Gemini -----------------
-def ask_gemini(question: str, context_df: pd.DataFrame):
-    """Pass query + context to Gemini and return text answer only."""
+def ask_gemini(query: str, df: pd.DataFrame, filters: dict = None):
+    """
+    Use Gemini to answer based on vector search results.
+    filters: optional dict to describe applied filters (year, neighbourhood, etc.)
+    """
     try:
-        context_text = context_df.to_string(index=False) if not context_df.empty else "No context found."
+        if df.empty:
+            return "No matching incidents found in the dataset."
+
+        # Build context string from the dataframe
+        context = df.to_dict(orient="records")
+
+        # Build a filter summary for the model
+        filter_text = ""
+        if filters:
+            applied = [f"{k}: {', '.join(map(str, v))}" for k, v in filters.items() if v]
+            if applied:
+                filter_text = "\nFilters applied: " + "; ".join(applied)
 
         prompt = f"""
-        You are a crime data analytics specialist for Toronto Police Services.
-        Use the following incident records to answer the question.
+        You are analyzing Toronto crime incident data. 
+        Here are the most relevant records (JSON): {json.dumps(context, default=str)}
+        {filter_text}
 
-        Question: {question}
+        Question: {query}
 
-        Incident Records:
-        {context_text}
-
-        Provide a clear, concise text answer.
+        Based only on this data:
+        - Provide a clear, text-based answer (not JSON).
+        - Summarize patterns, counts, or trends where possible.
+        - Mention if filters were applied so the user understands context.
         """
 
-        resp = client.models.generate_content(model=GEN_MODEL, contents=prompt)
+        resp = client.models.generate_content(
+            model="models/gemini-2.5-flash",
+            contents=prompt,
+        )
+
         return resp.text.strip()
 
     except Exception as e:

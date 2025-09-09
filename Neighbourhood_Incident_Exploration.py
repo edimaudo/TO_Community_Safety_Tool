@@ -9,7 +9,7 @@ st.write("""
          """)
 
 
-tab1, tab2= st.tabs(["Neighourhood Socio-Economic Metrics", "Neighourhood Incident Trends"])
+tab1, tab2, tab3 = st.tabs(["Neighourhood Socio-Economic Metrics", "Neighourhood Incident Trends","Neighbour Incident Q&A"])
 with tab1:
     with st.sidebar:
         neighourhood_options = st.selectbox('Neighbourhood',NEIGHBORHOOD)
@@ -170,4 +170,30 @@ with tab2:
  
 
 
+with tab3:
+    question = st.text_input("Ask a question about " + str( neighourhood_options)  + " incidents")
+    filters = {
+    "Neighbourhood": neighourhood_options,
+    "Year": year_options,
+    "Month": month_options,
+    "Day of Week": dow_options,
+    "Category": mci_options,
+    "Premises": premises_options,
+    }
+    if st.button("Search") and question:
+        with st.spinner("Running search..."):
+            context_df = vector_search(question, top_k=500,neighbourhood=neighourhood_options,
+                                       years=year_options,
+                                       months=month_options,
+                                       dows=dow_options,
+                                       categories=mci_options,
+                                       premises=premises_options)
 
+        if not context_df.empty:
+            with st.spinner("Asking Gemini..."):
+                answer = ask_gemini(question, context_df, filters)
+
+            st.subheader("Answer")
+            st.write(answer)
+        else:
+            st.warning("No relevant records found.")    

@@ -160,7 +160,7 @@ with tab2:
 
 
 with tab3:
-    question = st.text_input("Ask a question about crime incidents")
+    question = st.text_input("Ask a question about incidents")
     if st.button("Search") and question:
         with st.spinner("Running search..."):
             context_df = vector_search(question, top_k=500)
