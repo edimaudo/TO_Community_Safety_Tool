@@ -47,7 +47,6 @@ with tab1:
     col2.metric("# of Health Providers",statistics.median(wellbeing_health['Health Providers']))
 
 with tab2:
-
     with st.container():
         col1, col2, col3 = st.columns(3)
         neighorhood_df = df_filtered[(df_filtered['OCC_YEAR'].isin(year_options)) & (df_filtered['OCC_MONTH'].isin(month_options)) & (df_filtered['OCC_DOW'].isin(dow_options)) & (df_filtered['MCI_CATEGORY'].isin(mci_options)) & (df_filtered['PREMISES_TYPE'].isin(premises_options)) & (df_filtered['Neighborhood'] == neighourhood_options)]
@@ -173,7 +172,7 @@ with tab2:
 with tab3:
     question = st.text_input("Ask a question about " + str( neighourhood_options)  + " incidents")
     filters = {
-    "Neighbourhood": neighourhood_options,
+    "Neighbourhood": [neighourhood_options],
     "Year": year_options,
     "Month": month_options,
     "Day of Week": dow_options,
@@ -182,7 +181,7 @@ with tab3:
     }
     if st.button("Search") and question:
         with st.spinner("Running search..."):
-            context_df = vector_search(question, top_k=500,neighbourhood=neighourhood_options,
+            context_df = vector_search(question, top_k=500,neighbourhood=[neighourhood_options],
                                        years=year_options,
                                        months=month_options,
                                        dows=dow_options,
