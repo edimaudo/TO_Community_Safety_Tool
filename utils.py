@@ -99,65 +99,95 @@ def get_embedding(text: str):
 def vector_search(
     query: str,
     top_k: int = 20,
-    neighbourhood: list = None,
-    years: list = None,
-    months: list = None,
-    dows: list = None,
-    categories: list = None,
-    premises: list = None,
+    neighbourhood=None,
+    years=None,
+    months=None,
+    dows=None,
+    categories=None,
+    premises=None,
 ):
     """
     Hybrid vector + structured search.
-    - query: free text for embedding similarity
-    - top_k: number of rows to return
-    - optional filters: if lists provided, filter SQL results
+
+    Accepts either single values or lists for filters. Builds safe SQL clauses:
+      - if a filter has one value -> uses "col = %s"
+      - if a filter has multiple values -> uses "col IN (%s,%s,...)"
+
+    Returns: pandas.DataFrame
     """
     try:
+        # 1) get embedding
         query_emb = get_embedding(query)
         emb_json = json.dumps(query_emb)
 
-        conn = connect_tidb()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        # 2) normalize inputs -> ensure lists or None
+        def _norm(v):
+            if v is None:
+                return None
+            # If it's a scalar (string/int), wrap in list
+            if isinstance(v, (str, int)):
+                return [v]
+            # If it's a pandas Series/Index, convert to list and dropna
+            try:
+                import pandas as _pd
+                if isinstance(v, (_pd.Series, _pd.Index)):
+                    return [x for x in list(v) if pd.notna(x)]
+            except Exception:
+                pass
+            # If it's iterable (like list/tuple), convert to list and filter NA
+            if hasattr(v, "__iter__"):
+                return [x for x in list(v) if x is not None and (not (isinstance(x, float) and pd.isna(x)))]
+            return [v]
 
+        neighbourhood = _norm(neighbourhood)
+        years = _norm(years)
+        months = _norm(months)
+        dows = _norm(dows)
+        categories = _norm(categories)
+        premises = _norm(premises)
+
+        # 3) build WHERE clauses safely
         conditions = ["embedding IS NOT NULL"]
         params = [emb_json]
 
-        if years and len(years) > 0:
-            conditions.append("occ_year IN %s")
-            params.append(tuple(years))
+        def _add_filter(col_name, values):
+            # values is a list (or None)
+            if not values:
+                return
+            # single value
+            if len(values) == 1:
+                conditions.append(f"{col_name} = %s")
+                params.append(values[0])
+            else:
+                placeholders = ", ".join(["%s"] * len(values))
+                conditions.append(f"{col_name} IN ({placeholders})")
+                params.extend(values)
 
-        if months and len(months) > 0:
-            conditions.append("occ_month IN %s")
-            params.append(tuple(months))
-
-        if dows and len(dows) > 0:
-            conditions.append("occ_dow IN %s")
-            params.append(tuple(dows))
-
-        if categories and len(categories) > 0:
-            conditions.append("mci_category IN %s")
-            params.append(tuple(categories))
-
-        if premises and len(premises) > 0:
-            conditions.append("premises_type IN %s")
-            params.append(tuple(premises))
-
-        if neighbourhood and len(neighbourhood) > 0:
-            conditions.append("neighborhood IN %s")
-            params.append(tuple(neighbourhood))
+        _add_filter("occ_year", years)
+        _add_filter("occ_month", months)
+        _add_filter("occ_dow", dows)
+        _add_filter("mci_category", categories)
+        _add_filter("premises_type", premises)
+        _add_filter("neighborhood", neighbourhood)
 
         where_clause = " AND ".join(conditions)
 
         sql = f"""
-        SELECT id, occ_date, occ_year, occ_month, occ_day, occ_dow, occ_hour,
-               mci_category, offence, neighborhood, premises_type,
-               VEC_COSINE_DISTANCE(embedding, CAST(%s AS VECTOR)) AS score
+        SELECT
+          id, occ_date, occ_year, occ_month, occ_day, occ_dow, occ_hour,
+          mci_category, offence, neighborhood, premises_type,
+          VEC_COSINE_DISTANCE(embedding, CAST(%s AS VECTOR)) AS score
         FROM crime_data
         WHERE {where_clause}
         ORDER BY score ASC
-        LIMIT {top_k};
+        LIMIT %s;
         """
 
+        # append top_k as last param
+        params.append(top_k)
+
+        conn = connect_tidb()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute(sql, tuple(params))
         rows = cursor.fetchall()
         cursor.close()
@@ -168,6 +198,7 @@ def vector_search(
     except Exception as e:
         st.error(f"Vector search error: {e}")
         return pd.DataFrame()
+
 
 
 # ----------------- Ask Gemini -----------------
