@@ -9,7 +9,7 @@ st.write("""
          """)
 
 
-tab1, tab2, tab3 = st.tabs(["Socio-Economic Metrics", "Incident Trends", "Incident Data Q&A"])
+tab1, tab2 = st.tabs(["Socio-Economic Metrics", "Incident Trends"])
 
 with tab1:
     st.subheader("Culture")
@@ -159,18 +159,4 @@ with tab2:
 
 
 
-with tab3:
-    question = st.text_input("Ask a question about incidents")
-    if st.button("Search") and question:
-        with st.spinner("Running search..."):
-            context_df = vector_search(question, top_k=500)
-
-        if not context_df.empty:
-            with st.spinner("Asking Gemini..."):
-                answer = ask_gemini(question, context_df)
-
-            st.subheader("Answer")
-            st.write(answer)
-        else:
-            st.warning("No relevant records found.")
 
